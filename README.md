@@ -19,22 +19,13 @@ uv run smart_routine_maker.py # 프로그램 실행
 **Open-Meteo는 API 키가 필요 없습니다.** 따라서 제출할 키도 없습니다.
 위치와 기준값만 `.env`로 바꿀 수 있고, `.env`가 없으면 기본값(서울, 60%)으로 동작합니다.
 
-```bash
-cp .env.example .env   # Windows PowerShell: copy .env.example .env
+`.env.example`을 복사해 `.env`로 만들고 값을 바꾸면 됩니다. 형식은 `KEY=VALUE`, 한 줄에 하나입니다.
 ```
-`.env` 형식 (`KEY=VALUE`, 한 줄에 하나):
+WEATHER_LOCATION_NAME=서울   # 결과에 표시할 지역 이름
+WEATHER_LAT=37.5665          # 위도
+WEATHER_LON=126.9780         # 경도
+RAIN_THRESHOLD=60            # 이 강수 확률(%) 이상이면 트레드밀 추천
 ```
-WEATHER_LOCATION_NAME=서울
-WEATHER_LAT=37.5665
-WEATHER_LON=126.9780
-RAIN_THRESHOLD=60
-```
-| 키 | 의미 | 기본값 |
-|---|---|---|
-| `WEATHER_LOCATION_NAME` | 결과에 표시할 지역 이름 | 서울 |
-| `WEATHER_LAT`, `WEATHER_LON` | 예보를 조회할 위도/경도 | 서울시청 |
-| `RAIN_THRESHOLD` | 이 강수 확률(%) 이상이면 트레드밀 추천 | 60 |
-
 `.env`는 `.gitignore`에 등록되어 있어 저장소에 올라가지 않습니다.
 
 ## 3. 사용 방법
@@ -50,17 +41,8 @@ RAIN_THRESHOLD=60
 ```
 
 ## 4. 파일 구성
-| 파일 | 역할 |
-|---|---|
-| `smart_routine_maker.py` | 실행 파일. tkinter 화면, 입력 처리, 날씨 조회 호출, 파일 저장 |
-| `routine_core.py` | 루틴 생성 로직. 운동 데이터, 요일 배치, 종목/기구 배정, 결과 문자열 생성 |
-| `weather.py` | 날씨 API 모듈. `.env` 읽기, 다음 주 날짜 계산, API 호출/응답 파싱, 러닝 추천 규칙 |
-| `api-plan.md` | 이번 API 적용 기획안 |
-| `plan-2.md`, `new_plan.md` | 이전 주차 기획안 |
-| `CONVERSATION_*.md` | AI와 나눈 대화 원문 |
-| `.env.example` | `.env` 작성 예시 |
-
-기획안의 "한 파일 200줄 이하, 최대 3개 파일" 제약에 맞춰 화면/로직/API를 3개 파일로 나눴습니다.
+- 코드: `smart_routine_maker.py`(실행, 화면) · `routine_core.py`(루틴 생성) · `weather.py`(날씨 API)
+- 문서: `api-plan.md`(이번 기획안) · `plan-2.md`, `new_plan.md`(이전 기획안) · `CONVERSATION_*.md`(AI 대화 원문) · `.env.example`(설정 예시)
 
 ## 5. 코드가 어떻게 돌아가는지
 
@@ -71,9 +53,11 @@ RAIN_THRESHOLD=60
 
 **2. 날씨 가져오기** (`weather.py`)
 날씨 체크가 켜져 있으면 날씨부터 물어본다.
-- `get_settings()` : `.env`에서 위치랑 기준 확률을 읽는다. 파일이 없으면 서울, 60%로 한다.  > `.env`가 뭔지 정리 : 이번 과제를 하면서 처음 알게 됐다. `.env`는 프로그램 설정값을 `이름=값` 형태로 한 줄씩 적어두는 파일이다. 보통 API 키처럼 남에게 보여주면 안 되는 값을 코드에 직접 쓰지 않고 여기에 따로 둔다. 그래서 `.gitignore`에 넣어서 GitHub에는 안 올라가게 했다. 대신 어떤 형식으로 쓰는지 알 수 있게 예시 파일인 `.env.example`을 올려두었다. 내 프로그램은 키가 필요 없어서 `.env`에 지역(위도/경도)과 트레드밀 기준 확률만 넣게 했고, `.env`가 없어도 기본값으로 실행된다.
+- `get_settings()` : `.env`에서 위치랑 기준 확률을 읽는다. 파일이 없으면 서울, 60%로 한다.
+  > `.env`가 뭔지 정리 : 이번 과제를 하면서 처음 알게 됐다. `.env`는 프로그램 설정값을 `이름=값` 형태로 한 줄씩 적어두는 파일이다. 보통 API 키처럼 남에게 보여주면 안 되는 값을 코드에 직접 쓰지 않고 여기에 따로 둔다. 그래서 `.gitignore`에 넣어서 GitHub에는 안 올라가게 했다. 대신 어떤 형식으로 쓰는지 알 수 있게 예시 파일인 `.env.example`을 올려두었다. 내 프로그램은 키가 필요 없어서 `.env`에 지역(위도/경도)과 트레드밀 기준 확률만 넣게 했고, `.env`가 없어도 기본값으로 실행된다.
 - `next_week_dates()` : 오늘 날짜로 다음 주 월요일을 찾고, 월~일 7일 날짜를 만든다.
-- `fetch_weekly_weather()` : Open-Meteo 주소 뒤에 위도, 경도, 날짜를 붙여서 요청을 보낸다. 돌아온 답(JSON)에서 요일별 강수 확률, 강수량, 최저/최고 기온만 골라낸다.> API 요청이랑 JSON 정리 : API를 쓴다는 건 결국 정해진 인터넷 주소에 질문을 붙여서 보내는 것이었다. 예를 들면 `https://api.open-meteo.com/v1/forecast?latitude=37.56&longitude=126.97&start_date=...` 처럼 `?` 뒤에 `이름=값`을 `&`로 이어 붙이면 "이 위치, 이 날짜의 날씨를 알려줘"라는 뜻이 된다. 요청은 파이썬에 기본으로 들어 있는 `urllib`로 보냈다. 그러면 답이 JSON이라는 형식으로 오는데, JSON은 파이썬의 딕셔너리처럼 `"이름": 값` 모양으로 정리된 글자 데이터다. 답에는 정보가 많이 들어 있어서, `parse_daily()`에서 내가 필요한 강수 확률, 강수량, 최저/최고 기온만 요일별로 골라 정리했다.
+- `fetch_weekly_weather()` : Open-Meteo 주소 뒤에 위도, 경도, 날짜를 붙여서 요청을 보낸다. 돌아온 답(JSON)에서 요일별 강수 확률, 강수량, 최저/최고 기온만 골라낸다.
+  > API 요청이랑 JSON 정리 : API를 쓴다는 건 결국 정해진 인터넷 주소에 질문을 붙여서 보내는 것이었다. 예를 들면 `https://api.open-meteo.com/v1/forecast?latitude=37.56&longitude=126.97&start_date=...` 처럼 `?` 뒤에 `이름=값`을 `&`로 이어 붙이면 "이 위치, 이 날짜의 날씨를 알려줘"라는 뜻이 된다. 요청은 파이썬에 기본으로 들어 있는 `urllib`로 보냈다. 그러면 답이 JSON이라는 형식으로 오는데, JSON은 파이썬의 딕셔너리처럼 `"이름": 값` 모양으로 정리된 글자 데이터다. 답에는 정보가 많이 들어 있어서, `parse_daily()`에서 내가 필요한 강수 확률, 강수량, 최저/최고 기온만 요일별로 골라 정리했다.
 - 인터넷이 끊겼거나 답이 이상하면 `WeatherError`를 낸다. 화면 쪽에서 이걸 잡아서 경고창만 띄우고 **날씨 없이 그냥 루틴을 만든다.** 그래서 프로그램이 꺼지지 않는다.
 
 **3. 요일마다 운동 정하기** (`weather.arrange_slots()`)
