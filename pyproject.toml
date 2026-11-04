@@ -1,14 +1,7 @@
 [project]
-name = "week5"
-version = "0.1.0"
-description = "Add your description here"
+name = "routine-maker"
+version = "0.2.0"
+description = "주간 헬스 & 러닝 루틴 메이커 (Open-Meteo 날씨 API로 러닝/트레드밀 추천)"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = []
-
-[project.scripts]
-week5 = "week5:main"
-
-[build-system]
-requires = ["uv_build>=0.12.21,<0.13.0"]
-build-backend = "uv_build"
